@@ -54,15 +54,6 @@ async function processSingleDoc(arquivoTemplate, dadosFormulario, sufixoNome, ac
     }
 
     if (targetNode) {
-      // Tentar capturar a formatação original (tamanho da fonte, cor, estilo)
-      let targetRPr = '<w:rPr><w:color w:val="000000"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr>'; // fallback default 12pt
-      if (targetNode.parentNode && targetNode.parentNode.nodeName === 'w:r') {
-        const rPrNode = Array.from(targetNode.parentNode.childNodes).find(n => n.nodeName === 'w:rPr');
-        if (rPrNode) {
-          targetRPr = new XMLSerializer().serializeToString(rPrNode);
-        }
-      }
-
       // Subir na hierarquia até achar o parágrafo pai (<w:p>)
       let pNode = targetNode.parentNode;
       while (pNode && pNode.nodeName !== 'w:p') {
@@ -73,8 +64,8 @@ async function processSingleDoc(arquivoTemplate, dadosFormulario, sufixoNome, ac
         const parentContainer = pNode.parentNode;
         
         acessoriosSelecionados.forEach(acc => {
-           // Monta o XML herdando a exata formatação original
-           const bulletTemplateStr = `<w:p xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:pPr><w:pStyle w:val="Standarduser"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="15"/></w:numPr>${targetRPr}</w:pPr><w:r>${targetRPr}<w:t>${acc}</w:t></w:r></w:p>`;
+           // Monta o XML do novo bullet point (garantindo os namespaces necessários no parsing isolado)
+           const bulletTemplateStr = `<w:p xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:pPr><w:pStyle w:val="Standarduser"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="15"/></w:numPr><w:rPr><w:color w:val="000000"/><w:sz w:val="28"/><w:szCs w:val="28"/></w:rPr></w:pPr><w:r><w:rPr><w:color w:val="000000"/><w:sz w:val="28"/><w:szCs w:val="28"/></w:rPr><w:t>${acc}</w:t></w:r></w:p>`;
            
            const bulletDoc = parser.parseFromString(bulletTemplateStr, "application/xml");
            const importedNode = xmlDoc.importNode(bulletDoc.documentElement, true);
@@ -112,7 +103,7 @@ async function processSingleDoc(arquivoTemplate, dadosFormulario, sufixoNome, ac
     mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   });
 
-  const outputName = `${sufixoNome} - ${dadosFormulario.MATRICULA}_${dadosFormulario.NOME}.docx`;
+  const outputName = `${dadosFormulario.MATRICULA}_${dadosFormulario.NOME}.docx`;
   saveAs(out, outputName);
 }
 
