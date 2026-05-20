@@ -103,7 +103,7 @@ async function processSingleDoc(arquivoTemplate, dadosFormulario, sufixoNome, ac
     mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   });
 
-  const outputName = `${dadosFormulario.MATRICULA}_${dadosFormulario.NOME}.docx`;
+  const outputName = `${dadosFormulario.MATRICULA}_${dadosFormulario.NOME}_${dadosFormulario.NUMERO_SERIE}.docx`;
   saveAs(out, outputName);
 }
 
