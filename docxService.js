@@ -38,6 +38,16 @@ async function processSingleDoc(arquivoTemplate, dadosFormulario, sufixoNome, ac
   let xmlStr = zip.file("word/document.xml").asText();
   xmlStr = xmlStr.replace('{ACESSORIOS}', '');
 
+  // O troca.docx usa o formato { CAMPO } com espaços. Normaliza para {{CAMPO}} que o Docxtemplater entende.
+  if (arquivoTemplate === 'troca.docx') {
+    // Remove espaços internos e converte chave simples em dupla: { MODELO _NOVO } -> {{MODELO_NOVO}}
+    xmlStr = xmlStr.replace(/\{\s*([A-Z_]+(?:\s+[A-Z_]+)*)\s*\}/g, (match, p1) => {
+      const normalized = p1.replace(/\s+/g, '_').toUpperCase();
+      return `{{${normalized}}}`;
+    });
+  }
+
+
   if (arquivoTemplate === 'entrega.docx' && acessoriosSelecionados.length > 0) {
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(xmlStr, "application/xml");
@@ -119,6 +129,7 @@ export async function processTermos(tipo, isTroca, formDataBase, formDataNovaEnt
       // Troca marcada: gera apenas o Termo de Troca exclusivo com os dados combinados
       const dadosTroca = {
         ...formDataBase,
+        TECNICO: formDataBase.NOME_TECNICO, // Alias para o campo {TECNICO} do troca.docx
         // Dados do novo equipamento (disponíveis no template troca.docx)
         MODELO_NOVO: formDataNovaEntrega.MODELO,
         CODIGO_INTERNO_NOVO: formDataNovaEntrega.CODIGO_INTERNO,
