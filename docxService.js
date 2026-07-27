@@ -115,12 +115,20 @@ export async function processTermos(tipo, isTroca, formDataBase, formDataNovaEnt
   if (tipo === 'Entrega') {
     await processSingleDoc('entrega.docx', formDataBase, 'Termo de Entrega', acessoriosSelecionados);
   } else {
-    // 1. Gera e baixa a devolução principal do equipamento antigo
-    await processSingleDoc('devolucao.docx', formDataBase, 'Termo de Devolução');
-    
-    // 2. Se for troca, gera em seguida a entrega do equipamento novo
     if (isTroca && formDataNovaEntrega) {
-      await processSingleDoc('entrega.docx', formDataNovaEntrega, 'Termo de Entrega');
+      // Troca marcada: gera apenas o Termo de Troca exclusivo com os dados combinados
+      const dadosTroca = {
+        ...formDataBase,
+        // Dados do novo equipamento (disponíveis no template troca.docx)
+        MODELO_NOVO: formDataNovaEntrega.MODELO,
+        CODIGO_INTERNO_NOVO: formDataNovaEntrega.CODIGO_INTERNO,
+        NUMERO_SERIE_NOVO: formDataNovaEntrega.NUMERO_SERIE,
+        PATRIMONIO_NOVO: formDataNovaEntrega.PATRIMONIO,
+      };
+      await processSingleDoc('troca.docx', dadosTroca, 'Termo de Troca');
+    } else {
+      // Devolução simples: gera apenas o Termo de Devolução normal
+      await processSingleDoc('devolucao.docx', formDataBase, 'Termo de Devolução');
     }
   }
 }
