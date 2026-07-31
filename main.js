@@ -1,10 +1,8 @@
 import { gerarDataPorExtenso } from './utils.js';
 import { processTermos } from './docxService.js';
 
-// --- Atualizar Data na UI ---
 document.getElementById('currentDateString').textContent = gerarDataPorExtenso();
 
-// --- Elementos Básicos de UI ---
 const form = document.getElementById('termForm');
 const successMessage = document.getElementById('successMessage');
 
@@ -17,18 +15,17 @@ const checkTroca = document.getElementById('checkTroca');
 const novoEquipamentoGrid = document.getElementById('novoEquipamentoGrid');
 const baseInputsNovo = Array.from(novoEquipamentoGrid.querySelectorAll('input[type="text"]'));
 
-// Lógica de exibir/ocultar Técnico e aplicar formatação de preenchimento
 tipoTermoDropdown.addEventListener('change', () => {
   if (tipoTermoDropdown.value === 'Devolução') {
     nomeTecnicoContainer.style.display = 'block';
     nomeTecnicoInput.required = true;
-    trocaContainer.style.display = 'block'; // Mostrar checkbox de Troca na Devolucao
+    trocaContainer.style.display = 'block';
   } else {
     nomeTecnicoContainer.style.display = 'none';
     nomeTecnicoInput.required = false;
-    nomeTecnicoInput.value = ''; 
+    nomeTecnicoInput.value = '';
     trocaContainer.style.display = 'none';
-    checkTroca.checked = false; // Resetar troca
+    checkTroca.checked = false;
   }
   updateTrocaVisibility();
 });
@@ -38,7 +35,7 @@ checkTroca.addEventListener('change', updateTrocaVisibility);
 function updateTrocaVisibility() {
   if (tipoTermoDropdown.value === 'Devolução' && checkTroca.checked) {
     novoEquipamentoGrid.style.display = 'grid';
-    acessoriosContainer.style.display = 'none'; // Ocultar acessórios durante a troca
+    acessoriosContainer.style.display = 'none';
     baseInputsNovo.forEach(input => input.required = true);
   } else {
     novoEquipamentoGrid.style.display = 'none';
@@ -50,7 +47,6 @@ function updateTrocaVisibility() {
   }
 }
 
-// Auto-formatação para Maiúsculas
 const allTextInputs = document.querySelectorAll('input[type="text"]');
 allTextInputs.forEach(input => {
   input.addEventListener('input', function() {
@@ -58,19 +54,17 @@ allTextInputs.forEach(input => {
   });
 });
 
-// --- Controlador de Submissão do Formulário ---
 async function handleFormSubmit(event) {
   event.preventDefault();
   successMessage.classList.add('hidden');
-  
+
   const submitBtn = document.getElementById('submitBtn');
   submitBtn.disabled = true;
   submitBtn.innerHTML = '⏳ GERANDO...';
 
-  const tipo = tipoTermoDropdown.value; 
+  const tipo = tipoTermoDropdown.value;
   const isTroca = tipo === 'Devolução' && checkTroca.checked;
 
-  // Extrair acessórios selecionados na entrega
   let acessoriosSelecionados = [];
   if (tipo === 'Entrega') {
     if (document.getElementById('checkMouse').checked) acessoriosSelecionados.push('Mouse');
@@ -78,7 +72,6 @@ async function handleFormSubmit(event) {
     if (document.getElementById('checkMochila').checked) acessoriosSelecionados.push('Mochila');
   }
 
-  // Agrupar dados base do formulário
   const formDataBase = {
     NOME: document.getElementById('nome').value.trim(),
     MATRICULA: document.getElementById('matricula').value.trim(),
@@ -90,7 +83,6 @@ async function handleFormSubmit(event) {
     DATA: gerarDataPorExtenso()
   };
 
-  // Agrupar dados extras se for uma troca
   let formDataNovaEntrega = null;
   if (isTroca) {
     formDataNovaEntrega = {
@@ -103,13 +95,19 @@ async function handleFormSubmit(event) {
   }
 
   try {
-    // Delegar a lógica pesada de processamento para o Serviço
     await processTermos(tipo, isTroca, formDataBase, formDataNovaEntrega, acessoriosSelecionados);
 
-    // Sucesso - Limpar Form, atualizar visibilidade
+    // Guarda o tipo selecionado ANTES do reset, para restaurar depois
+    const tipoSelecionadoAntes = tipo;
+
     form.reset();
+
+    // Restaura a seleção do dropdown (o reset volta ao padrão "Entrega")
+    tipoTermoDropdown.value = tipoSelecionadoAntes;
+    tipoTermoDropdown.dispatchEvent(new Event('change'));
+
     updateTrocaVisibility();
-    
+
     successMessage.classList.remove('hidden');
     setTimeout(() => successMessage.classList.add('hidden'), 5000);
 
@@ -122,5 +120,4 @@ async function handleFormSubmit(event) {
   }
 }
 
-// Acoplar controlador ao formulário
 form.addEventListener('submit', handleFormSubmit);
